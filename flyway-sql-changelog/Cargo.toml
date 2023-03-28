@@ -10,7 +10,7 @@ categories = ["database"]
 keywords = ["database", "sql", "migrations", "orm"]
 repository = "https://github.com/tdcare/flyway-rs"
 homepage = "https://github.com/tdcare/flyway-rs"
-readme = "README.md"
+#readme = "README.md"
 exclude = [
     "examples"
 ]

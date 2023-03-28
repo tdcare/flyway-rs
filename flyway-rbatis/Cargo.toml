@@ -1,0 +1,28 @@
+[package]
+name = "flyway-rbatis"
+version = "0.1.0"
+edition = "2021"
+
+description = "Part of Flayway-rs. Contains driver implementations for Rbatis."
+authors = ["tdcare <tzw@tdcare.cn>"]
+license = "MIT"
+
+categories = ["database"]
+keywords = ["database", "sql", "migrations", "orm"]
+repository = "https://github.com/tdcare/flyway-rs"
+homepage = "https://github.com/tdcare/flyway-rs"
+readme = "README.md"
+exclude = [
+    "examples"
+]
+[dependencies]
+flyway={version = "0.1.0",path = "../flyway"}
+
+
+rbatis = {version="4.2.3",features = ["debug_mode"]} #必选
+
+
+async-trait={version = "0.1.64"}
+
+
+tokio={version = "1.26.0"}

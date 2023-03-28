@@ -1,0 +1,34 @@
+[package]
+name = "flyway-codegen"
+version = "0.1.0"
+edition = "2021"
+
+description = "Part of Flyway-rs. Contains the `migrations` macro for creating migrations from a directory of SQL files."
+authors = ["tdcare <tzw@tdcare.cn>"]
+license = "MIT"
+
+categories = ["database"]
+keywords = ["database", "sql", "migrations", "orm"]
+repository = "https://github.com/tdcare/flyway-rs"
+homepage = "https://github.com/tdcare/flyway-rs"
+readme = "README.md"
+exclude = [
+    "examples"
+]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+flyway-sql-changelog={version = "0.1.0",path = "../flyway-sql-changelog"}
+
+
+syn={version = "1.0.98",features = [ "full" ]}
+
+quote={version = "1.0.20"}
+
+
+proc-macro2={version = "1.0.40"}
+
+serde={version = "1.0.152",features = ["derive"]}
+

@@ -1,0 +1,21 @@
+[package]
+name = "flyway-sql-changelog"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+# license-file = "../LICENSE.txt"
+authors = ["tdcare <tzw@tdcare.cn>"]
+description = "Part of Flyway-rs. Contains the ChangelogFile and corresponding iterator implementations."
+categories = ["database"]
+keywords = ["database", "sql", "migrations", "orm"]
+repository = "https://github.com/tdcare/flyway-rs"
+homepage = "https://github.com/tdcare/flyway-rs"
+readme = "README.md"
+exclude = [
+    "examples"
+]
+
+[dependencies]
+serde={version = "1.0.152",features = ["derive"]}
+serde_yaml={version = "0.9.17"}
+

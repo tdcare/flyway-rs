@@ -1,6 +1,6 @@
 # flyway-rs copy from db-up
 
-`db-up` is a collection of Rust crates for loading and executing database
+`flyway` is a collection of Rust crates for loading and executing database
 migrations.
 
 It supposed to be an alternative to [refinery](https://github.com/rust-db/refinery)
@@ -11,15 +11,15 @@ fork or including the driver inside the `refinery` crate. The reason is that the
 the `refinery::AsyncMigrate` trait and reading [this issue](https://github.com/rust-db/refinery/issues/248)
 it seems the authors are not motivated to change this behaviour.
 
-`db-up` consists of multiple crates:
+`flyway` consists of multiple crates:
 * Top-level crates:
-    * `db-up`: The main crate. Contains the migration runner and re-exports necessary
-      macros and structs from other db-up crates.
-    * `db-up-rbatis`: A driver for executing DB migrations via the
+    * `flyway`: The main crate. Contains the migration runner and re-exports necessary
+      macros and structs from other flyway crates.
+    * `flyway-rbatis`: A driver for executing DB migrations via the
       [Rbatis](https://github.com/rbatis/rbatis) database library.
 * Other crates:
-    * `db-up-codegen`: Contains the `migrations` attribute macro
-    * `db-up-sql-changelog`: Contains the `ChangelogFile` struct that can load
+    * `flyway-codegen`: Contains the `migrations` attribute macro
+    * `flyway-sql-changelog`: Contains the `ChangelogFile` struct that can load
       SQL files and split them into separate, annotated statements
       via a `SqlStatementIterator`.
 
@@ -35,7 +35,7 @@ This crate has some known (and probably some unknown) limitations and stability 
 * The `iter()` implementation for `ChangelogFile` is not conforming to the Rust standards
   yet.
 * For now, there is only an Rbatis driver implementation available.
-* The Rbatis driver in `db-up-rbatis` uses one set of queries for all database drivers supported
+* The Rbatis driver in `flyway-rbatis` uses one set of queries for all database drivers supported
   by Rbatis. As far as i can tell from e.g. `refinery`, some database systems (specifically MSSQL)
   support or even need a different syntax for state management.
 * More examples should be added.
@@ -46,30 +46,30 @@ This crate has some known (and probably some unknown) limitations and stability 
 All the crates in this project are libraries. The included tests can be started via:
 
 ```sh
-~$ cd db-up
-~/db-up$ cargo test
+~$ cd flyway
+~/flyway$ cargo test
 ```
 
 To use the crates inside your project, the following steps should be taken:
 
 1. Include the necessary crates in your `Cargo.toml` (get available versions
-   from [crates.io](https://crates.io/crates/db-up)):
+   from [crates.io](https://crates.io/crates/flyway)):
 ```toml
-# Add the db-up dependency
-[dependency.db-up]
+# Add the flyway dependency
+[dependency.flyway]
 version = "<version>"
 
-# Add the db-up-rbatis dependency in order to run migrations via Rbatis. At the time
+# Add the flyway-rbatis dependency in order to run migrations via Rbatis. At the time
 # of writing, this is the only supported database driver.
-[dependency.db-up-rbatis]
+[dependency.flyway-rbatis]
 version = "<version>"
 
 # Add Rbatis dependencies ...
 ```
 2. E.g in your `main.rs`:
 ```rust
-use db_up::{MigrationExecutor, MigrationState, MigrationStateManager, MigrationStore, migrations, MigrationRunner};
-use db_up_rbatis::RbatisMigrationDriver;
+use flyway::{MigrationExecutor, MigrationState, MigrationStateManager, MigrationStore, migrations, MigrationRunner};
+use flyway_rbatis::RbatisMigrationDriver;
 use rbatis::Rbatis;
 
 // Load migrations (SQL files) from `examples/migrations` and make them available via
@@ -95,4 +95,4 @@ async fn run(rbatis: Arc<Rbatis>) -> Result<()> {
 
 # License
 
-The project is licensed under the [BSD 3-clause license](LICENSE.txt).
+The project is licensed under the [MIT](LICENSE).

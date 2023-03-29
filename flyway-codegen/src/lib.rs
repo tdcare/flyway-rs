@@ -67,7 +67,7 @@ pub fn migrations(args: TokenStream, input: TokenStream) -> TokenStream {
                 .expect(format!("Could not read migration file: {}", file_path).as_str());
 
             // just check if the changelog can be loaded correctly:
-            let _changelog = ChangelogFile::from_string(version.to_string().as_str(), content.as_str())
+            let _changelog = ChangelogFile::from_string(version.to_string().as_str(), name,content.as_str())
                 .expect(format!("Migration file is not a valid SQL changelog file: {}", file_path).as_str());
 
             quote! {
@@ -85,7 +85,7 @@ pub fn migrations(args: TokenStream, input: TokenStream) -> TokenStream {
 
                 let mut result: Vec<ChangelogFile> = [#(#migration_tokens),*].iter()
                 .map(|migration| {
-                    ChangelogFile::from_string(migration.0.to_string().as_str(), migration.2).unwrap()
+                    ChangelogFile::from_string(migration.0.to_string().as_str(),migration.1.to_string().as_str(), migration.2).unwrap()
                 })
                 .collect();
                 return result;

@@ -11,12 +11,14 @@ categories = ["database"]
 keywords = ["database", "sql", "migrations", "orm"]
 repository = "https://github.com/tdcare/flyway-rs"
 homepage = "https://github.com/tdcare/flyway-rs"
-#readme = "README.md"
+readme = "README.md"
 exclude = [
     "examples"
 ]
 
 [dependencies]
+log = "0.4.17"
+
 flyway-codegen={version = "0.1.0",path = "../flyway-codegen"}
 flyway-sql-changelog={version = "0.1.0",path = "../flyway-sql-changelog"}
 async-trait={version = "0.1.64"}

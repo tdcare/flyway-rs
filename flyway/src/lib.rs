@@ -216,12 +216,12 @@ pub trait MigrationStateManager {
     async fn list_versions(&self) -> Result<Vec<MigrationState>>;
 
     /// Begin a new version
-    async fn begin_version(&self, version: u32) -> Result<()>;
+    async fn begin_version(&self, changelog_file: &ChangelogFile) -> Result<()>;
 
     /// Finish a new version
     ///
     /// This will usually just set the status of the migration version to `Deployed`
-    async fn finish_version(&self, version: u32) -> Result<()>;
+    async fn finish_version(&self, changelog_file: &ChangelogFile) -> Result<()>;
 }
 
 /// Trait for executing migrations
@@ -231,7 +231,7 @@ pub trait MigrationStateManager {
 #[async_trait]
 pub trait MigrationExecutor {
     async fn begin_transaction(&self) -> Result<()>;
-    async fn execute_changelog_file(&self, changelog_file: ChangelogFile) -> Result<()>;
+    async fn execute_changelog_file(&self, changelog_file: &ChangelogFile) -> Result<()>;
     async fn commit_transaction(&self) -> Result<()>;
     async fn rollback_transaction(&self) -> Result<()>;
 }
@@ -294,24 +294,24 @@ impl<S, M, E> MigrationRunner<S, M, E>
                     .unwrap();
             })
             .collect::<Vec<ChangelogFile>>();
-        println!("sorting migrations ...");
+        log::debug!("Sorting migrations ...");
         migrations.sort_by(|a, b| a.version().cmp(b.version()));
         let migrations = migrations;
 
-        println!("running migrations ... {:?}", &migrations);
+        log::debug!("Running migrations ... {:?}", &migrations);
         for changelog in migrations.into_iter() {
             let version: u32 = changelog.version().parse().unwrap();
 
-            self.state_manager.begin_version(version).await?;
+            self.state_manager.begin_version(&changelog).await?;
             self.executor.begin_transaction().await?;
             let result = self.executor
-                .execute_changelog_file(changelog)
+                .execute_changelog_file(&changelog)
                 .await;
 
             match result {
                 Ok(_) => {
                     self.executor.commit_transaction().await?;
-                    self.state_manager.finish_version(version).await?;
+                    self.state_manager.finish_version(&changelog).await?;
                     current_highest_version = Some(version);
                 },
                 Err(err) => {

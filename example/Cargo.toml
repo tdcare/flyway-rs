@@ -1,0 +1,30 @@
+[package]
+name = "example"
+version = "0.1.0"
+authors = ["tdcare <tzw@tdcare.cn>"]
+edition = "2021"
+publish = false
+
+[dependencies]
+#serde and base types
+serde = { version = "1", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+
+log = "0.4.17"
+fast_log = "1.5"
+
+flyway={path="../flyway"}
+flyway-rbatis={path="../flyway-rbatis"}
+
+rbatis = {version="4.3.0",features = ["debug_mode"]} #必选
+#rbdc = { version = "4.3.0", default-features = false }
+rbdc-mysql = "4.3.1"
+rbdc-tdengine = "4.3.2"
+
+[[bin]]
+name = "mysql"
+path = "src/mysql.rs"
+[[bin]]
+name = "taos"
+path = "src/taos.rs"
+

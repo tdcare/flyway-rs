@@ -18,4 +18,5 @@ exclude = [
 [dependencies]
 serde={version = "1.0.152",features = ["derive"]}
 serde_yaml={version = "0.9.17"}
-
+log = "0.4.17"
+siphasher = "0.3"

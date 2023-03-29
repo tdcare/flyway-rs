@@ -7,6 +7,8 @@ use std::cmp::Ordering;
 use serde::{ Deserialize, Serialize };
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::hash::{Hash, Hasher};
+use siphasher::sip128::SipHasher13;
 
 const SINGLE_QUOTE1: u8 = '\'' as u8;
 const SINGLE_QUOTE2: u8 = '`' as u8;
@@ -119,10 +121,14 @@ pub type Result<T> = std::result::Result<T, ChangelogError>;
 #[derive(Debug, Clone)]
 pub struct ChangelogFile {
     /// The version this `ChangelogFile` represents
-    version: String,
+    pub version: String,
+    /// The name ChangelogFile
+    pub name:String,
+    /// The checksum
+    pub checksum: u64,
 
     /// The full code of this `ChangelogFile`
-    content: Arc<String>,
+    pub content: Arc<String>,
 }
 
 /// Internal state of the `SqlStatementIterator`
@@ -180,6 +186,7 @@ impl ChangelogFile {
     /// Load `ChangelogFile` from a given path
     pub fn from_path(path: &Path) -> Result<ChangelogFile> {
         let mut version = "".to_string();
+        let mut name="".to_string();
         let basename_opt = path.components().last();
         if let Some(basename) = basename_opt {
             let basename = basename.as_os_str().to_str().unwrap();
@@ -192,17 +199,37 @@ impl ChangelogFile {
         }
 
         return std::fs::read_to_string(path)
-            .map(|content| ChangelogFile {
-                version,
-                content: Arc::new(content)
-            })
+            .map(|content| {
+                let mut hasher = SipHasher13::new();
+                name.hash(&mut hasher);
+                version.hash(&mut hasher);
+                content.hash(&mut hasher);
+                let checksum = hasher.finish();
+
+                ChangelogFile {
+                    version,
+                    name,
+                    checksum,
+                    content: Arc::new(content)
+                }
+            }
+            )
             .or_else(|err| Err(err.into()));
     }
 
     /// Create `ChangelogFile` from a version and a string containing the contents
-    pub fn from_string(version: &str, sql: &str) -> Result<ChangelogFile> {
+    pub fn from_string(version: &str,name:&str, sql: &str) -> Result<ChangelogFile> {
+
+        let mut hasher = SipHasher13::new();
+        name.hash(&mut hasher);
+        version.hash(&mut hasher);
+        sql.hash(&mut hasher);
+        let checksum = hasher.finish();
+
         return Ok(ChangelogFile {
             version: version.to_string(),
+            name: name.to_string(),
+            checksum,
             content: Arc::new(sql.to_string())
         });
     }
@@ -504,7 +531,7 @@ impl Iterator for SqlStatementIterator {
 
         for byte in statement.as_slice() {
             if *byte > 127 {
-                println!("invalid byte: {:#02x}", byte);
+                log::error!("invalid byte: {:#02x}", byte);
             }
         }
 
@@ -552,7 +579,7 @@ mod test {
 
     #[test]
     pub fn test_load_changelog_file1() {
-        let path = Path::new(".").join("examples/migrations/V1_test1.sql");
+        let path = Path::new("../").join("example/migrations/V1_test1.sql");
         let result = ChangelogFile::from_path(&path);
         match result {
             Ok(changelog) => {
@@ -568,7 +595,7 @@ mod test {
 
     #[test]
     pub fn test_load_changelog_file2() {
-        let path = Path::new(".").join("examples/migrations/V2_test2.sql");
+        let path = Path::new("../").join("example/migrations/V2_test2.sql");
         let result = ChangelogFile::from_path(&path);
         match result {
             Ok(changelog) => {
@@ -584,7 +611,7 @@ mod test {
 
     #[test]
     pub fn test_changelog_file1_iterator() {
-        let path = Path::new(".").join("examples/migrations/V1_test1.sql");
+        let path = Path::new("../").join("example/migrations/V1_test1.sql");
         let result = ChangelogFile::from_path(&path);
         match result {
             Ok(changelog) => {
@@ -605,7 +632,7 @@ mod test {
 
     #[test]
     pub fn test_changelog_file2_iterator() {
-        let path = Path::new(".").join("examples/migrations/V2_test2.sql");
+        let path = Path::new("../").join("example/migrations/V2_test2.sql");
         let result = ChangelogFile::from_path(&path);
         match result {
             Ok(changelog) => {

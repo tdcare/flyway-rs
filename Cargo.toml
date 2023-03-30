@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "flyway",
+    "flyway-codegen",
+    "flyway-sql-changelog",
+    "flyway-rbatis",
+    "example"
+]

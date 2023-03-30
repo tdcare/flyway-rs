@@ -1,9 +1,10 @@
 create table if not exists PatientUseDevice
 (
-    id          int auto_increment primary key,
-    device_no   varchar(36)    null,
-    patientId   varchar(36)    null,
-    hisId       varchar(36)   null,
-    start_time  bigint   null,
-    end_time    bigint null
+    ts timestamp,
+    id          int,
+    device_no    nchar(36)      ,
+    patientId    nchar(36)      ,
+    hisId        nchar(36)     ,
+    start_time  bigint     ,
+    end_time    bigint   
     );

@@ -1,19 +1,19 @@
 create table if not exists DeviceData
 (
-    id          int auto_increment
-        primary key,
-    device_no   varchar(36)    null,
+   ts timestamp,
+    id          int ,
+    device_no   nchar(36),
 
-    patientId   varchar(36)    null,
-    patientName varchar(36)    null ,
-    hisId                    varchar(36)   null,
-    departmentId             varchar(255)  null,
-    departmentName           varchar(128)  null,
-    SickbedNo   varchar(63) null ,
+    patientId   nchar(36)     ,
+    patientName nchar(36)      ,
+    hisId                    nchar(36)    ,
+    departmentId             nchar(255)   ,
+    departmentName           nchar(128)   ,
+    SickbedNo   nchar(63)   ,
 
-    msh_time    bigint   null,
-    msh_type    text     null,
-    vital_signs longtext null,
-    hl7         longtext null
+    msh_time    bigint    ,
+    msh_type    nchar(36)      ,
+    vital_signs nchar(2048)  ,
+    hl7         nchar(2048)  
 );
 

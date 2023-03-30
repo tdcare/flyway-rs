@@ -64,7 +64,7 @@ impl RbatisMigrationDriver {
     ///
     /// This method will get the driver type from `Rbatis` (which is a string) and convert it into
     /// an `RbatisDbDriverType`. `Other(String)` will be used for any database drivers not directly
-    /// known to `db-up-rbatis`.
+    /// known to `flyway-rbatis`.
     pub fn driver_type(&self) -> rbatis::Result<RbatisDbDriverType> {
         let db = self.db.clone();
         let driver_type_name = db.driver_type()?;
@@ -210,7 +210,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                            Ok(result) => {
                                // println!("{:?}",result);
                               if result.first().is_some(){
-                                  let mut time=result.first().unwrap().ts.clone().deref_mut().clone().set_offset(-16*60*60);
+                                  let  time=result.first().unwrap().ts.clone().deref_mut().clone().set_offset(-16*60*60);
                                    ts=time.unix_timestamp_millis();
                               }
                            }
@@ -218,8 +218,6 @@ impl MigrationStateManager for RbatisMigrationDriver {
                                log::error!("数据异常:{}",e.to_string())
                            }
                        };
-
-
                        let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'in_progress');"#,
                                                       self.migrations_table_name.as_str());
                        log::debug!("Insert statement: {}", insert_statement.as_str());
@@ -272,8 +270,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                         match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![to_value!(changelog_file.version.clone())]).await{
                             Ok(result) => {
                                 if result.first().is_some(){
-                                    let mut time=result.first().unwrap().ts.clone().deref_mut().clone().set_offset(-16*60*60);
-
+                                    let  time=result.first().unwrap().ts.clone().deref_mut().clone().set_offset(-16*60*60);
                                     ts=time.unix_timestamp_millis();                               }
                             }
                             Err(e) => {
@@ -281,7 +278,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                             }
                         };
 
-                        let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?, 'deployed');"#,
+                        let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'deployed');"#,
                                                        self.migrations_table_name.as_str());
                         log::debug!("Insert statement: {}", insert_statement.as_str());
                         let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])

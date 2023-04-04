@@ -20,7 +20,7 @@ exclude = [
 proc-macro = true
 
 [dependencies]
-flyway-sql-changelog={version = "0.1.0",path = "../flyway-sql-changelog"}
+flyway-sql-changelog={version = "0.1.1",path = "../flyway-sql-changelog"}
 
 
 syn={version = "1.0.98",features = [ "full" ]}

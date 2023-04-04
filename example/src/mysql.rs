@@ -39,7 +39,7 @@ pub async fn main() {
     // rb.init(rbdc_mssql::driver::MssqlDriver {}, "mssql://SA:TestPass!123456@localhost:1433/test").unwrap();
     rb.init(
         MysqlDriver {},
-        "mysql://tdnis:Tdcare123for$@58.20.184.66:6006/tdbox_service?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8",
+        "mysql://tdnis:Tdcare123for$@mysql-service:6006/tdbox_service?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8",
     )
         .unwrap();
 

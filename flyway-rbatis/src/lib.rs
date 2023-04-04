@@ -36,6 +36,115 @@ pub enum RbatisDbDriverType {
     TDengine,
     Other(String),
 }
+/// 不同数据库的建表语句
+fn create_table_sql(db_type:RbatisDbDriverType, migrations_table_name: String) -> String {
+        match db_type {
+            RbatisDbDriverType::MySql => {
+              format!(r#"CREATE TABLE IF NOT EXISTS {} (
+                version INTEGER PRIMARY KEY,
+                ts       varchar(255) null,
+                name     varchar(255) null,
+                checksum   varchar(255) null,
+                status VARCHAR(16)
+            );"#,migrations_table_name)
+            }
+            RbatisDbDriverType::Pg => {
+                format!(r#"CREATE TABLE IF NOT EXISTS {} (
+                version INTEGER PRIMARY KEY,
+                ts       varchar(255) null,
+                name     varchar(255) null,
+                checksum   varchar(255) null,
+                status VARCHAR(16)
+            );"#,migrations_table_name)
+            }
+            RbatisDbDriverType::Sqlite => {
+                format!(r#"CREATE TABLE IF NOT EXISTS {} (
+                version INTEGER PRIMARY KEY,
+                ts       varchar(255) null,
+                name     varchar(255) null,
+                checksum   varchar(255) null,
+                status VARCHAR(16)
+            );"#,migrations_table_name)
+            }
+            RbatisDbDriverType::MsSql => {
+                format!(r#"CREATE TABLE IF NOT EXISTS {} (
+                version INTEGER PRIMARY KEY,
+                ts       varchar(255) null,
+                name     varchar(255) null,
+                checksum   varchar(255) null,
+                status VARCHAR(16)
+            );"#,migrations_table_name)
+            }
+            RbatisDbDriverType::TDengine => {
+               format!(r#"CREATE TABLE IF NOT EXISTS {} (`ts` TIMESTAMP, `version` int,`name` nchar(255) , `checksum` nchar(255), `status` nchar(255))
+                  "#,migrations_table_name)
+            }
+            RbatisDbDriverType::Other(_) => {
+                format!(r#"CREATE TABLE IF NOT EXISTS {} (
+                version INTEGER PRIMARY KEY,
+                ts       varchar(255) null,
+                name     varchar(255) null,
+                checksum   varchar(255) null,
+                status VARCHAR(16)
+            );"#,migrations_table_name)
+            }
+        }
+}
+/// 不同数据库的update
+fn update_sql(db_type:RbatisDbDriverType,migrations_table_name: String,status:String,version:String)->String{
+    match db_type {
+        RbatisDbDriverType::MySql => {
+            format!(r#"UPDATE {} SET status='{}' where version={};"#,
+                    migrations_table_name.as_str(),status.as_str(), version.as_str())
+        }
+        RbatisDbDriverType::Pg => {
+            unimplemented!()
+        }
+        RbatisDbDriverType::Sqlite => {
+            unimplemented!()
+
+        }
+        RbatisDbDriverType::MsSql => {
+            unimplemented!()
+
+        }
+        RbatisDbDriverType::TDengine => {
+            unimplemented!()
+        }
+        RbatisDbDriverType::Other(_) => {
+            unimplemented!()
+
+        }
+    }
+}
+/// 不同数据库的insert
+fn insert_sql(db_type:RbatisDbDriverType,migrations_table_name: String,status:String)->String{
+match db_type {
+    RbatisDbDriverType::MySql => {
+        format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, '{}');"#,
+                migrations_table_name.as_str(),status.as_str())
+    }
+    RbatisDbDriverType::Pg => {
+        unimplemented!()
+
+    }
+    RbatisDbDriverType::Sqlite => {
+        unimplemented!()
+
+    }
+    RbatisDbDriverType::MsSql => {
+        unimplemented!()
+
+    }
+    RbatisDbDriverType::TDengine => {
+        unimplemented!()
+    }
+    RbatisDbDriverType::Other(_) => {
+        unimplemented!()
+
+    }
+}
+}
 
 /// Rbatis implementation of `MigrationStateManager` and `MigrationExecutor`
 pub struct RbatisMigrationDriver {
@@ -86,40 +195,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
     async fn prepare(&self) -> flyway::Result<()> {
         log::debug!("Preparing Migrations Table ...");
         let db = self.db.clone();
-        let mut statement = format!(
-            r#"CREATE TABLE IF NOT EXISTS {} (
-                version INTEGER PRIMARY KEY,
-                ts       varchar(255) null,
-                name     varchar(255) null,
-                checksum   varchar(255) null,
-                status VARCHAR(16)
-            );"#, self.migrations_table_name.as_str());
-
-        match self.driver_type(){
-            Ok(db_type) => {
-                match db_type {
-                    RbatisDbDriverType::MySql => {
-                        log::debug!("数据库类型:MySql",);
-
-                    }
-                    RbatisDbDriverType::Pg => {}
-                    RbatisDbDriverType::Sqlite => {}
-                    RbatisDbDriverType::MsSql => {}
-                    RbatisDbDriverType::TDengine => {
-                        log::debug!("数据库类型:TDengine",);
-                      statement=format!(
-                          r#"
-                          CREATE TABLE IF NOT EXISTS {} (`ts` TIMESTAMP, `version` int,`name` nchar(255) , `checksum` nchar(255), `status` nchar(255))
-                          "#
-                          , self.migrations_table_name.as_str())
-                    }
-                    RbatisDbDriverType::Other(_) => {}
-                }
-            }
-            Err(_) => {}
-        }
-
-
+      let statement=create_table_sql(self.driver_type().unwrap(),self.migrations_table_name.clone());
         let mut db = db.acquire()
             .await
             .or_else(|err| Err(MigrationsError::migration_database_failed(None, Some(err.into()))))?;
@@ -232,8 +308,10 @@ impl MigrationStateManager for RbatisMigrationDriver {
            Err(_) => {}
        }
 
-        let update_statement = format!(r#"UPDATE {} SET status='in_progress' where version={};"#,
-                                       self.migrations_table_name.as_str(), changelog_file.version);
+        // let update_statement = format!(r#"UPDATE {} SET status='in_progress' where version={};"#,
+        //                                self.migrations_table_name.as_str(), changelog_file.version);
+        let update_statement =update_sql(self.driver_type().unwrap(),self.migrations_table_name.clone(),"in_progress".to_string(),changelog_file.version.clone());
+
         log::debug!("Update statement: {}", update_statement.as_str());
         let update_result = db.exec(update_statement.as_str(), vec![])
             .await
@@ -242,8 +320,9 @@ impl MigrationStateManager for RbatisMigrationDriver {
         if update_result.rows_affected < 1 {
             let  ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version.parse::<i64>().unwrap_or_default();
 
-            let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'in_progress');"#,
-                                           self.migrations_table_name.as_str());
+            // let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'in_progress');"#,
+            //                                self.migrations_table_name.as_str());
+           let insert_statement=insert_sql(self.driver_type().unwrap(),self.migrations_table_name.clone(),"in_progress".to_string());
             log::debug!("Insert statement: {}", insert_statement.as_str());
             let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])
                 .await
@@ -293,8 +372,10 @@ impl MigrationStateManager for RbatisMigrationDriver {
         }
 
 
-        let update_statement = format!(r#"UPDATE {} SET status='deployed' where version={};"#,
-                                       self.migrations_table_name.as_str(), changelog_file.version);
+        // let update_statement = format!(r#"UPDATE {} SET status='deployed' where version={};"#,
+        //                                self.migrations_table_name.as_str(), changelog_file.version);
+        let update_statement =update_sql(self.driver_type().unwrap(),self.migrations_table_name.clone(),"deployed".to_string(),changelog_file.version.clone());
+
         log::debug!("Update statement: {}", update_statement.as_str());
         let update_result = db.exec(update_statement.as_str(), vec![])
             .await
@@ -303,8 +384,10 @@ impl MigrationStateManager for RbatisMigrationDriver {
         if update_result.rows_affected < 1 {
             let  ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version.parse::<i64>().unwrap_or_default();
 
-            let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'in_progress');"#,
-                                           self.migrations_table_name.as_str());
+            // let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'in_progress');"#,
+            //                                self.migrations_table_name.as_str());
+            let insert_statement=insert_sql(self.driver_type().unwrap(),self.migrations_table_name.clone(),"in_progress".to_string());
+
             log::debug!("Insert statement: {}", insert_statement.as_str());
             let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])
                 .await

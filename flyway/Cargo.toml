@@ -1,6 +1,6 @@
 [package]
 name = "flyway"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 # license-file = "../LICENSE.txt"
 description = "Main crate of the Flyway-rs project. Includes `migrations` macro and the `MigrationRunner`"
@@ -19,7 +19,7 @@ exclude = [
 [dependencies]
 log = "0.4.17"
 
-flyway-codegen={version = "0.1.1",path = "../flyway-codegen"}
+flyway-codegen={version = "0.2.0",path = "../flyway-codegen",features = ["debug_mode"]}
 flyway-sql-changelog={version = "0.1.1",path = "../flyway-sql-changelog"}
 async-trait={version = "0.1.64"}
 

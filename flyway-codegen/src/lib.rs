@@ -51,11 +51,19 @@ pub fn migrations(args: TokenStream, input: TokenStream) -> TokenStream {
         let migrations_path = syn::parse_macro_input!(args as LitStr).value();
         map_to_crate_root(Some(migrations_path.as_str()))
     };
-    println!("migrations path: {:?}", path);
+
+    #[cfg(feature = "debug_mode")]
+    if cfg!(debug_assertions){
+        println!("migrations path: {:?}", path);
+    }
+
 
     let migrations = get_migrations(&path)
         .expect("Error while gathering migration file information.");
-    println!("migrations: {:?}", &migrations);
+    #[cfg(feature = "debug_mode")]
+    if cfg!(debug_assertions){
+        println!("migrations: {:?}", &migrations);
+    }
 
     let migration_tokens: Vec<TokenStream2> = migrations.iter()
         .map(|migration| {

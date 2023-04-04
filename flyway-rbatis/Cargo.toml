@@ -1,6 +1,6 @@
 [package]
 name = "flyway-rbatis"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 
 description = "Part of Flayway-rs. Contains driver implementations for Rbatis."
@@ -16,7 +16,7 @@ exclude = [
     "examples"
 ]
 [dependencies]
-flyway={version = "0.2.0",path = "../flyway"}
+flyway={version = "0.2.1",path = "../flyway"}
 log = "0.4.17"
 serde = { version = "1", features = ["derive"] }
 

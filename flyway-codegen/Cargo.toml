@@ -1,6 +1,6 @@
 [package]
 name = "flyway-codegen"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 
 description = "Part of Flyway-rs. Contains the `migrations` macro for creating migrations from a directory of SQL files."

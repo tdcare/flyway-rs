@@ -222,6 +222,9 @@ pub trait MigrationStateManager {
     ///
     /// This will usually just set the status of the migration version to `Deployed`
     async fn finish_version(&self, changelog_file: &ChangelogFile) -> Result<()>;
+   /// Skip version while  sql fail
+    async fn skip_version(&self, changelog_file: &ChangelogFile) -> Result<()>;
+
 }
 
 /// Trait for executing migrations
@@ -252,6 +255,9 @@ pub struct MigrationRunner<S, M, E> {
     /// This is an `Arc` so that the state manager and the executor can, but are not required
     /// to be, the same object.
     executor: Arc<E>,
+
+    /// 当变更Sql 出现错误的时候，是否继续执行后边的变更文件
+    fail_continue:bool,
 }
 
 /// Struct storing the changelogs needed for the migrations
@@ -268,9 +274,10 @@ impl<S, M, E> MigrationRunner<S, M, E>
           E: MigrationExecutor {
 
     /// Create a new `MigrationRunner`
-    pub fn new(store: S, state_manager: Arc<M>, executor: Arc<E>) -> Self {
+    pub fn new(store: S, state_manager: Arc<M>, executor: Arc<E>,fail_continue:bool) -> Self {
         return Self {
-            store, state_manager, executor
+            store, state_manager, executor,
+            fail_continue,
         };
     }
 
@@ -318,7 +325,13 @@ impl<S, M, E> MigrationRunner<S, M, E>
                     let _result = self.executor.rollback_transaction().await
                         .or::<MigrationsError>(Ok(()))
                         .unwrap();
-                    return Err(err);
+                    if self.fail_continue {
+                        log::error!("Migration Fail but fail_continue is set true,will continue to execute");
+                        self.state_manager.skip_version(&changelog).await?;
+                        current_highest_version = Some(version);
+                    }else {
+                        return Err(err);
+                    }
                 }
             }
         }

@@ -396,6 +396,71 @@ impl MigrationStateManager for RbatisMigrationDriver {
 
         return Ok(());
     }
+
+    async fn skip_version(&self, changelog_file: &ChangelogFile) -> flyway::Result<()> {
+        log::debug!("Skip version ... {}", changelog_file.version);
+        let db = self.db.clone();
+        let mut db = db.acquire()
+            .await
+            .or_else(|err| Err(MigrationsError::migration_database_failed(None, Some(err.into()))))?;
+
+
+        match   self.driver_type(){
+            Ok(db_type) => {
+                match db_type {
+                    RbatisDbDriverType::TDengine => {
+                        let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version.parse::<i64>().unwrap_or_default();
+                        let ts_select=format!(r#"select ts,version from {} where status='in_progress' and version=? limit 1;"#, self.migrations_table_name.as_str());
+                        match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![to_value!(changelog_file.version.clone())]).await{
+                            Ok(result) => {
+                                if result.first().is_some(){
+                                    let  time=result.first().unwrap().ts.clone().deref_mut().clone().set_offset(-16*60*60);
+                                    ts=time.unix_timestamp_millis();                               }
+                            }
+                            Err(e) => {
+                                log::error!("数据异常:{}",e.to_string())
+                            }
+                        };
+
+                        let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'fail');"#,
+                                                       self.migrations_table_name.as_str());
+                        log::debug!("Insert statement: {}", insert_statement.as_str());
+                        let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])
+                            .await
+                            .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
+                        return Ok(());
+                    }
+                    _ => {}
+                }
+            }
+            Err(_) => {}
+        }
+
+
+        // let update_statement = format!(r#"UPDATE {} SET status='deployed' where version={};"#,
+        //                                self.migrations_table_name.as_str(), changelog_file.version);
+        let update_statement =update_sql(self.driver_type().unwrap(),self.migrations_table_name.clone(),"fail".to_string(),changelog_file.version.clone());
+
+        log::debug!("Update statement: {}", update_statement.as_str());
+        let update_result = db.exec(update_statement.as_str(), vec![])
+            .await
+            .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
+
+        if update_result.rows_affected < 1 {
+            let  ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version.parse::<i64>().unwrap_or_default();
+
+            // let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'in_progress');"#,
+            //                                self.migrations_table_name.as_str());
+            let insert_statement=insert_sql(self.driver_type().unwrap(),self.migrations_table_name.clone(),"in_progress".to_string());
+
+            log::debug!("Insert statement: {}", insert_statement.as_str());
+            let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])
+                .await
+                .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
+        }
+
+        return Ok(());
+    }
 }
 
 /// Implementation of the `MigrationExecutor`

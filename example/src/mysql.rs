@@ -17,7 +17,8 @@ async fn run(rbatis: Arc<Rbatis>) -> Result<(), MigrationsError> {
     let migration_runner = MigrationRunner::new(
         Migrations {},
         migration_driver.clone(),
-        migration_driver.clone()
+        migration_driver.clone(),
+        true
     );
     migration_runner.migrate().await?;
     Ok(())

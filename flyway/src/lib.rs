@@ -188,7 +188,7 @@ pub enum MigrationStatus {
 #[derive(Debug, Clone)]
 pub struct MigrationState {
     /// The version of the migration
-    pub version: u32,
+    pub version: u64,
 
     /// The status of the migration
     pub status: MigrationStatus,
@@ -286,28 +286,26 @@ impl<S, M, E> MigrationRunner<S, M, E>
     /// This will execute each migration inside its own DB transaction. Therefore, if an error
     /// occurs and the method returns prematurely, all versions that have been successfully
     /// deployed will stay in the database.
-    pub async fn migrate(&self) -> Result<Option<u32>> {
+    pub async fn migrate(&self) -> Result<Option<u64>> {
         self.state_manager.prepare().await?;
         let mut current_highest_version = self.state_manager.highest_version()
             .await?
             .map(|state| state.version);
         let mut migrations: Vec<ChangelogFile> = self.store.changelogs().into_iter()
             .filter(|migration| {
-                let version: u32 = migration.version()
-                    .parse()
-                    .expect("Version must be an integer");
+                let version: u64 = migration.version();
                 return current_highest_version.map(|highest_version| version > highest_version)
                     .or(Some(true))
                     .unwrap();
             })
             .collect::<Vec<ChangelogFile>>();
         log::debug!("Sorting migrations ...");
-        migrations.sort_by(|a, b| a.version().cmp(b.version()));
+        migrations.sort_by(|a, b| a.version().cmp(&b.version()));
         let migrations = migrations;
 
         log::debug!("Running migrations ... {:?}", &migrations);
         for changelog in migrations.into_iter() {
-            let version: u32 = changelog.version().parse().unwrap();
+            let version: u64 = changelog.version();
 
             self.state_manager.begin_version(&changelog).await?;
             self.executor.begin_transaction().await?;

@@ -91,11 +91,11 @@ fn create_table_sql(db_type:RbatisDbDriverType, migrations_table_name: String) -
         }
 }
 /// 不同数据库的update
-fn update_sql(db_type:RbatisDbDriverType,migrations_table_name: String,status:String,version:String)->String{
+fn update_sql(db_type:RbatisDbDriverType,migrations_table_name: String,status:String,version:u64)->String{
     match db_type {
         RbatisDbDriverType::MySql => {
             format!(r#"UPDATE {} SET status='{}' where version={};"#,
-                    migrations_table_name.as_str(),status.as_str(), version.as_str())
+                    migrations_table_name.as_str(),status.as_str(), version)
         }
         RbatisDbDriverType::Pg => {
             unimplemented!()
@@ -214,7 +214,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
         let mut db = db.acquire()
             .await
             .or_else(|err| Err(MigrationsError::migration_database_failed(None, Some(err.into()))))?;
-        let version: Option<u32> = db.query_decode(format!("SELECT MIN(version) FROM {} WHERE status='deployed';",
+        let version: Option<u64> = db.query_decode(format!("SELECT MIN(version) FROM {} WHERE status='deployed';",
                                                            self.migrations_table_name.as_str()).as_str(), vec![])
             .await
             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
@@ -233,7 +233,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
         let mut db = db.acquire()
             .await
             .or_else(|err| Err(MigrationsError::migration_database_failed(None, Some(err.into()))))?;
-        let version: Option<u32> = db.query_decode(format!("SELECT MAX(version) FROM {} WHERE status='deployed';",
+        let version: Option<u64> = db.query_decode(format!("SELECT MAX(version) FROM {} WHERE status='deployed';",
                                                            self.migrations_table_name.as_str()).as_str(), vec![])
             .await
             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
@@ -252,7 +252,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
         let mut db = db.acquire()
             .await
             .or_else(|err| Err(MigrationsError::migration_database_failed(None, Some(err.into()))))?;
-        let versions: Vec<u32> = db.query_decode(format!("SELECT version FROM {} WHERE status='deployed' ORDER BY version asc;",
+        let versions: Vec<u64> = db.query_decode(format!("SELECT version FROM {} WHERE status='deployed' ORDER BY version asc;",
                                                          self.migrations_table_name.as_str()).as_str(), vec![])
             .await
             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
@@ -280,7 +280,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
            Ok(db_type) => {
                match db_type {
                    RbatisDbDriverType::TDengine => {
-                       let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version.parse::<i64>().unwrap_or_default();
+                       let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version() as i64;
                        let ts_select=format!(r#"select ts,version from {} where status='in_progress' and version=? limit 1;"#, self.migrations_table_name.as_str());
                        match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![to_value!(changelog_file.version.clone())]).await{
                            Ok(result) => {
@@ -318,7 +318,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
 
         if update_result.rows_affected < 1 {
-            let  ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version.parse::<i64>().unwrap_or_default();
+            let  ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version as i64;
 
             // let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'in_progress');"#,
             //                                self.migrations_table_name.as_str());
@@ -344,7 +344,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
             Ok(db_type) => {
                 match db_type {
                     RbatisDbDriverType::TDengine => {
-                        let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version.parse::<i64>().unwrap_or_default();
+                        let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version as i64;
                         let ts_select=format!(r#"select ts,version from {} where status='in_progress' and version=? limit 1;"#, self.migrations_table_name.as_str());
                         match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![to_value!(changelog_file.version.clone())]).await{
                             Ok(result) => {
@@ -382,7 +382,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
 
         if update_result.rows_affected < 1 {
-            let  ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version.parse::<i64>().unwrap_or_default();
+            let  ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version as i64;
 
             // let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'in_progress');"#,
             //                                self.migrations_table_name.as_str());
@@ -409,7 +409,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
             Ok(db_type) => {
                 match db_type {
                     RbatisDbDriverType::TDengine => {
-                        let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version.parse::<i64>().unwrap_or_default();
+                        let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version as i64;
                         let ts_select=format!(r#"select ts,version from {} where status='in_progress' and version=? limit 1;"#, self.migrations_table_name.as_str());
                         match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![to_value!(changelog_file.version.clone())]).await{
                             Ok(result) => {
@@ -447,7 +447,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
 
         if update_result.rows_affected < 1 {
-            let  ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version.parse::<i64>().unwrap_or_default();
+            let  ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version as i64;
 
             // let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'in_progress');"#,
             //                                self.migrations_table_name.as_str());

@@ -121,7 +121,7 @@ pub type Result<T> = std::result::Result<T, ChangelogError>;
 #[derive(Debug, Clone)]
 pub struct ChangelogFile {
     /// The version this `ChangelogFile` represents
-    pub version: String,
+    pub version: u64,
     /// The name ChangelogFile
     pub name:String,
     /// The checksum
@@ -185,7 +185,7 @@ pub struct SqlStatementIterator {
 impl ChangelogFile {
     /// Load `ChangelogFile` from a given path
     pub fn from_path(path: &Path) -> Result<ChangelogFile> {
-        let mut version = "".to_string();
+        let mut version = 0;
         let mut name="".to_string();
         let basename_opt = path.components().last();
         if let Some(basename) = basename_opt {
@@ -193,7 +193,7 @@ impl ChangelogFile {
             let index_opt = basename.find("_");
             if let Some(index) = index_opt {
                 if index > 0 {
-                    version = (&basename[0..index]).to_string();
+                    version = (&basename[0..index]).to_string().parse().unwrap_or_default();
                 }
             }
         }
@@ -218,7 +218,7 @@ impl ChangelogFile {
     }
 
     /// Create `ChangelogFile` from a version and a string containing the contents
-    pub fn from_string(version: &str,name:&str, sql: &str) -> Result<ChangelogFile> {
+    pub fn from_string(version: u64,name:&str, sql: &str) -> Result<ChangelogFile> {
 
         let mut hasher = SipHasher13::new();
         name.hash(&mut hasher);
@@ -227,7 +227,7 @@ impl ChangelogFile {
         let checksum = hasher.finish();
 
         return Ok(ChangelogFile {
-            version: version.to_string(),
+            version,
             name: name.to_string(),
             checksum,
             content: Arc::new(sql.to_string())
@@ -240,8 +240,8 @@ impl ChangelogFile {
     }
 
     /// Get the version of this `ChangelogFile`
-    pub fn version(&self) -> &str {
-        return self.version.as_str();
+    pub fn version(&self) -> u64 {
+        return self.version;
     }
 
     /// Get the raw text of the `ChangelogFile`
@@ -261,7 +261,7 @@ impl PartialEq<Self> for ChangelogFile {
 impl PartialOrd<Self> for ChangelogFile {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        return self.version.as_bytes().partial_cmp(other.version.as_bytes());
+        return self.version.partial_cmp(&other.version);
     }
 }
 
@@ -269,7 +269,7 @@ impl Eq for ChangelogFile { }
 
 impl Ord for ChangelogFile {
     fn cmp(&self, other: &Self) -> Ordering {
-        return self.version.as_bytes().cmp(other.version.as_bytes());
+        return self.version.cmp(&other.version);
     }
 }
 

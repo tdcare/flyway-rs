@@ -5,7 +5,7 @@ use std::time::Duration;
 use tokio::sync::Mutex;
 use serde::{Deserialize, Serialize};
 
-use rbatis::{Error, Rbatis};
+use rbatis::{Error, RBatis};
 use flyway::{MigrationExecutor, MigrationState, MigrationStateManager, MigrationsError, MigrationStatus, ChangelogFile};
 use rbs::{to_value, Value};
 use async_trait::async_trait;
@@ -148,7 +148,7 @@ match db_type {
 
 /// Rbatis implementation of `MigrationStateManager` and `MigrationExecutor`
 pub struct RbatisMigrationDriver {
-    db: Arc<Rbatis>,
+    db: Arc<RBatis>,
     migrations_table_name: String,
     tx: Mutex<Cell<Option<RBatisTxExecutor>>>,
 }
@@ -159,7 +159,7 @@ impl RbatisMigrationDriver {
     ///  * `db`: The `Rbatis` instance for accessing the database
     ///  * `migrations_table_name`: The optional name of the table the migration state information
     ///    should be stored in. If `None`, the `DEFAULT_MIGRATIONS_TABLE` will be used.
-    pub fn new(db: Arc<Rbatis>, migrations_table_name: Option<&str>) -> RbatisMigrationDriver {
+    pub fn new(db: Arc<RBatis>, migrations_table_name: Option<&str>) -> RbatisMigrationDriver {
         return RbatisMigrationDriver {
             db: db.clone(),
             migrations_table_name: migrations_table_name.map(|v| v.to_string())

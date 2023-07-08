@@ -1,0 +1,25 @@
+## 通过 Github action， 在仓库的每一次 commit 后自动同步到 Gitee 上
+name: sync2gitee
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+jobs:
+  repo-sync:
+    env:
+      dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
+      dst_token: ${{ secrets.GITEE_TOKEN }}
+      gitee_user: ${{ secrets.GITEE_USER }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - uses: wearerequired/git-mirror-action@master
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITEE_PRIVATE_KEY }}
+        with:
+          source-repo: "git@github.com:tdcare/slint.git"
+          destination-repo: "git@gitee.com:tdcare/slint.git"

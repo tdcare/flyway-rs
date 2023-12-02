@@ -20,9 +20,9 @@ flyway={version = "0.2.2",path = "../flyway"}
 log = "0.4.17"
 serde = { version = "1", features = ["derive"] }
 
-rbatis = {version="4.3.6",features = ["debug_mode"]} #必选
-rbs={version="4.3.2"}
-rbdc={version="4.3.6"}
+rbatis = {version="4.5",features = ["debug_mode"]} #必选
+rbs={version="4.5"}
+rbdc={version="4.5"}
 
 async-trait={version = "0.1.64"}
 

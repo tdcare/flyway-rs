@@ -6,3 +6,15 @@ members = [
     "flyway-rbatis",
     "example"
 ]
+
+[workspace.package]
+version = "0.3.0"
+edition = "2021"
+description = "Main crate of the Flyway-rs project. Includes `migrations` macro and the `MigrationRunner`"
+authors = ["tdcare <tzw@tdcare.cn>"]
+license = "MIT"
+
+categories = ["database"]
+keywords = ["database", "sql", "migrations", "orm"]
+repository = "https://github.com/tdcare/flyway-rs"
+homepage = "https://github.com/tdcare/flyway-rs"

@@ -1,16 +1,14 @@
 [package]
 name = "flyway-rbatis"
-version = "0.2.3"
-edition = "2021"
-
-description = "Part of Flayway-rs. Contains driver implementations for Rbatis."
-authors = ["tdcare <tzw@tdcare.cn>"]
-license = "MIT"
-
-categories = ["database"]
-keywords = ["database", "sql", "migrations", "orm"]
-repository = "https://github.com/tdcare/flyway-rs"
-homepage = "https://github.com/tdcare/flyway-rs"
+description.workspace=true
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+readme = "README.md"
 #readme = "README.md"
 exclude = [
     "examples"

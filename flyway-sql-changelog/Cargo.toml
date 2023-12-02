@@ -1,15 +1,14 @@
 [package]
 name = "flyway-sql-changelog"
-version = "0.2.2"
-edition = "2021"
-license = "MIT"
-# license-file = "../LICENSE.txt"
-authors = ["tdcare <tzw@tdcare.cn>"]
-description = "Part of Flyway-rs. Contains the ChangelogFile and corresponding iterator implementations."
-categories = ["database"]
-keywords = ["database", "sql", "migrations", "orm"]
-repository = "https://github.com/tdcare/flyway-rs"
-homepage = "https://github.com/tdcare/flyway-rs"
+description.workspace=true
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+readme = "README.md"
 #readme = "README.md"
 exclude = [
     "examples"

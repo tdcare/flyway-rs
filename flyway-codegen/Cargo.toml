@@ -1,16 +1,14 @@
 [package]
 name = "flyway-codegen"
-version = "0.2.2"
-edition = "2021"
-
-description = "Part of Flyway-rs. Contains the `migrations` macro for creating migrations from a directory of SQL files."
-authors = ["tdcare <tzw@tdcare.cn>"]
-license = "MIT"
-
-categories = ["database"]
-keywords = ["database", "sql", "migrations", "orm"]
-repository = "https://github.com/tdcare/flyway-rs"
-homepage = "https://github.com/tdcare/flyway-rs"
+description.workspace=true
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+version.workspace = true
+readme = "README.md"
 #readme = "README.md"
 exclude = [
     "examples"

@@ -20,8 +20,8 @@ debug_mode=[]
 
 
 [dependencies]
-flyway-sql-changelog={path = "../flyway-sql-changelog"}
-
+#flyway-sql-changelog={path = "../flyway-sql-changelog"}
+flyway-sql-changelog= {workspace = true}
 
 syn={version = "1.0.98",features = [ "full" ]}
 

@@ -21,4 +21,4 @@ homepage = "https://github.com/tdcare/flyway-rs"
 readme = "README.md"
 
 [workspace.dependencies]
-flyway-sql-changelog={version="0.3.1",path = "../flyway-sql-changelog"}
+flyway-sql-changelog={version="0.3.1",path = "./flyway-sql-changelog"}

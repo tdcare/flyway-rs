@@ -22,3 +22,6 @@ readme = "README.md"
 
 [workspace.dependencies]
 flyway-sql-changelog={version="0.3.1",path = "./flyway-sql-changelog"}
+flyway-codegen={version="0.3.1",path = "./flyway-codegen",features = ["debug_mode"]}
+flyway-rbatis={version="0.3.1",path = "./flyway-rbatis"}
+flyway={version="0.3.1",path = "./flyway"}

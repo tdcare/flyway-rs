@@ -16,8 +16,8 @@ exclude = [
 [dependencies]
 log = "0.4.17"
 
-flyway-codegen={path = "../flyway-codegen",features = ["debug_mode"]}
-flyway-sql-changelog={path = "../flyway-sql-changelog"}
+flyway-codegen={workspace = true}
+flyway-sql-changelog= {workspace = true}
 
 
 async-trait={version = "0.1.64"}

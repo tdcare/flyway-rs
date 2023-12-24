@@ -12,7 +12,7 @@ exclude = [
     "examples"
 ]
 [dependencies]
-flyway={version = "0.2.2",path = "../flyway"}
+flyway={path = "../flyway"}
 log = "0.4.17"
 serde = { version = "1", features = ["derive"] }
 

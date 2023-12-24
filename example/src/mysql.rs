@@ -2,7 +2,7 @@
 extern crate rbatis;
 
 use std::sync::Arc;
-use rbatis::Rbatis;
+use rbatis::RBatis;
 use rbdc_mysql::driver::MysqlDriver;
 use flyway::{MigrationRunner, MigrationsError};
 use flyway::migrations;
@@ -12,7 +12,7 @@ use flyway_rbatis::*;
 pub struct Migrations {
 }
 
-async fn run(rbatis: Arc<Rbatis>) -> Result<(), MigrationsError> {
+async fn run(rbatis: Arc<RBatis>) -> Result<(), MigrationsError> {
     let migration_driver = Arc::new(RbatisMigrationDriver::new(rbatis.clone(), None));
     let migration_runner = MigrationRunner::new(
         Migrations {},
@@ -33,7 +33,7 @@ pub async fn main() {
     )
         .expect("rbatis init fail");
 
-    let rb = Rbatis::new();
+    let rb = RBatis::new();
     // ------------choose database driver------------
     // rb.init(rbdc_mysql::driver::MysqlDriver {}, "mysql://root:123456@localhost:3306/test").unwrap();
     // rb.init(rbdc_pg::driver::PgDriver {}, "postgres://postgres:123456@localhost:5432/postgres").unwrap();

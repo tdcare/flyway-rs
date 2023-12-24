@@ -8,13 +8,16 @@ members = [
 ]
 
 [workspace.package]
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
-description = "Main crate of the Flyway-rs project. Includes `migrations` macro and the `MigrationRunner`"
+description = "Flyway-rs project, Database change control,similar to flyway  in Java"
 authors = ["tdcare <tzw@tdcare.cn>"]
 license = "MIT"
 
 categories = ["database"]
-keywords = ["database", "sql", "migrations", "orm"]
+keywords = ["database", "sql", "migrations", "orm","rbatis"]
 repository = "https://github.com/tdcare/flyway-rs"
 homepage = "https://github.com/tdcare/flyway-rs"
+readme = "README.md"
+
+[workspace.dependencies]

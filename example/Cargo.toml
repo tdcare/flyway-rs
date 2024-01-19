@@ -19,7 +19,8 @@ flyway-rbatis= {workspace = true}
 rbatis = {version="4.5",features = ["debug_mode"]} #必选
 #rbdc = { version = "4.3.0", default-features = false }
 rbdc-mysql = "4.5"
-rbdc-tdengine = { git="https://gitee.com/tdcare/rbdc-tdengine.git" }
+rbdc-tdengine = {version="4.5" }
+#rbdc-tdengine = { git="https://gitee.com/tdcare/rbdc-tdengine.git" }
 
 [[bin]]
 name = "mysql"

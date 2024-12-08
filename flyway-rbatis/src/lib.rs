@@ -286,7 +286,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                            Ok(result) => {
                                // println!("{:?}",result);
                               if result.first().is_some(){
-                                  let  time=result.first().unwrap().ts.clone().deref_mut().clone().set_offset(-16*60*60);
+                                  let  time=result.first().unwrap().ts.clone().set_offset(-16*60*60);
                                    ts=time.unix_timestamp_millis();
                               }
                            }
@@ -349,7 +349,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                         match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![to_value!(changelog_file.version.clone())]).await{
                             Ok(result) => {
                                 if result.first().is_some(){
-                                    let  time=result.first().unwrap().ts.clone().deref_mut().clone().set_offset(-16*60*60);
+                                    let  time=result.first().unwrap().ts.clone().set_offset(-16*60*60);
                                     ts=time.unix_timestamp_millis();                               }
                             }
                             Err(e) => {
@@ -414,7 +414,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                         match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![to_value!(changelog_file.version.clone())]).await{
                             Ok(result) => {
                                 if result.first().is_some(){
-                                    let  time=result.first().unwrap().ts.clone().deref_mut().clone().set_offset(-16*60*60);
+                                    let  time=result.first().unwrap().ts.clone().set_offset(-16*60*60);
                                     ts=time.unix_timestamp_millis();                               }
                             }
                             Err(e) => {

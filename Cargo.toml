@@ -8,7 +8,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 description = "Flyway-rs project, Database change control,similar to flyway  in Java"
 authors = ["tdcare <tzw@tdcare.cn>"]
@@ -21,7 +21,7 @@ homepage = "https://github.com/tdcare/flyway-rs"
 readme = "README.md"
 
 [workspace.dependencies]
-flyway-sql-changelog={version="0.3.1",path = "./flyway-sql-changelog"}
-flyway-codegen={version="0.3.1",path = "./flyway-codegen",features = ["debug_mode"]}
-flyway-rbatis={version="0.3.1",path = "./flyway-rbatis"}
-flyway={version="0.3.1",path = "./flyway"}
+flyway-sql-changelog={version="0.3.2",path = "./flyway-sql-changelog"}
+flyway-codegen={version="0.3.2",path = "./flyway-codegen",features = ["debug_mode"]}
+flyway-rbatis={version="0.3.2",path = "./flyway-rbatis"}
+flyway={version="0.3.2",path = "./flyway"}

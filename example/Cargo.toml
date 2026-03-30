@@ -19,6 +19,7 @@ flyway-rbatis= {workspace = true}
 rbatis = {version="4.5",features = ["debug_mode"]} #必选
 #rbdc = { version = "4.3.0", default-features = false }
 rbdc-mysql = "4.5"
+rbdc-pg = "4.5"
 rbdc-tdengine = {version="4.5" }
 #rbdc-tdengine = { git="https://gitee.com/tdcare/rbdc-tdengine.git" }
 
@@ -28,4 +29,7 @@ path = "src/mysql.rs"
 [[bin]]
 name = "taos"
 path = "src/taos.rs"
+[[bin]]
+name = "multi-db"
+path = "src/multi_db.rs"
 

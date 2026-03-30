@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use rbatis::{Error, RBatis};
 use flyway::{MigrationExecutor, MigrationState, MigrationStateManager, MigrationsError, MigrationStatus, ChangelogFile};
-use rbs::{to_value, Value};
+use rbs::{value, Value};
 use async_trait::async_trait;
 use rbatis::executor::RBatisTxExecutor;
 use rbatis::rbatis_codegen::ops::AsProxy;
@@ -67,13 +67,14 @@ fn create_table_sql(db_type:RbatisDbDriverType, migrations_table_name: String) -
             );"#,migrations_table_name)
             }
             RbatisDbDriverType::MsSql => {
-                format!(r#"CREATE TABLE IF NOT EXISTS {} (
+                format!(r#"IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='{}' AND xtype='U')
+                CREATE TABLE {} (
                 version INTEGER PRIMARY KEY,
                 ts       varchar(255) null,
                 name     varchar(255) null,
                 checksum   varchar(255) null,
                 status VARCHAR(16)
-            );"#,migrations_table_name)
+            );"#,migrations_table_name, migrations_table_name)
             }
             RbatisDbDriverType::TDengine => {
                format!(r#"CREATE TABLE IF NOT EXISTS {} (`ts` TIMESTAMP, `version` int,`name` nchar(255) , `checksum` nchar(255), `status` nchar(255))
@@ -98,52 +99,57 @@ fn update_sql(db_type:RbatisDbDriverType,migrations_table_name: String,status:St
                     migrations_table_name.as_str(),status.as_str(), version)
         }
         RbatisDbDriverType::Pg => {
-            unimplemented!()
+            format!(r#"UPDATE {} SET status='{}' where version={};"#,
+                    migrations_table_name.as_str(),status.as_str(), version)
         }
         RbatisDbDriverType::Sqlite => {
-            unimplemented!()
-
+            format!(r#"UPDATE {} SET status='{}' where version={};"#,
+                    migrations_table_name.as_str(),status.as_str(), version)
         }
         RbatisDbDriverType::MsSql => {
-            unimplemented!()
-
+            format!(r#"UPDATE {} SET status='{}' where version={};"#,
+                    migrations_table_name.as_str(),status.as_str(), version)
         }
         RbatisDbDriverType::TDengine => {
-            unimplemented!()
+            // TDengine 作为时序数据库，不支持标准 UPDATE 语法
+            // 需要通过插入新记录来更新状态
+            format!(r#"INSERT INTO {}(ts,version,name,checksum,status) VALUES (NOW,{},'','','{}');"#,
+                    migrations_table_name.as_str(), version, status.as_str())
         }
         RbatisDbDriverType::Other(_) => {
-            unimplemented!()
-
+            format!(r#"UPDATE {} SET status='{}' where version={};"#,
+                    migrations_table_name.as_str(),status.as_str(), version)
         }
     }
 }
 /// 不同数据库的insert
 fn insert_sql(db_type:RbatisDbDriverType,migrations_table_name: String,status:String)->String{
-match db_type {
-    RbatisDbDriverType::MySql => {
-        format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, '{}');"#,
-                migrations_table_name.as_str(),status.as_str())
+    match db_type {
+        RbatisDbDriverType::MySql => {
+            format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, '{}');"#,
+                    migrations_table_name.as_str(),status.as_str())
+        }
+        RbatisDbDriverType::Pg => {
+            format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, '{}');"#,
+                    migrations_table_name.as_str(),status.as_str())
+        }
+        RbatisDbDriverType::Sqlite => {
+            format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, '{}');"#,
+                    migrations_table_name.as_str(),status.as_str())
+        }
+        RbatisDbDriverType::MsSql => {
+            format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, '{}');"#,
+                    migrations_table_name.as_str(),status.as_str())
+        }
+        RbatisDbDriverType::TDengine => {
+            format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, '{}');"#,
+                    migrations_table_name.as_str(),status.as_str())
+        }
+        RbatisDbDriverType::Other(_) => {
+            format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, '{}');"#,
+                    migrations_table_name.as_str(),status.as_str())
+        }
     }
-    RbatisDbDriverType::Pg => {
-        unimplemented!()
-
-    }
-    RbatisDbDriverType::Sqlite => {
-        unimplemented!()
-
-    }
-    RbatisDbDriverType::MsSql => {
-        unimplemented!()
-
-    }
-    RbatisDbDriverType::TDengine => {
-        unimplemented!()
-    }
-    RbatisDbDriverType::Other(_) => {
-        unimplemented!()
-
-    }
-}
 }
 
 /// Rbatis implementation of `MigrationStateManager` and `MigrationExecutor`
@@ -282,7 +288,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                    RbatisDbDriverType::TDengine => {
                        let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version() as i64;
                        let ts_select=format!(r#"select ts,version from {} where status='in_progress' and version=? limit 1;"#, self.migrations_table_name.as_str());
-                       match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![to_value!(changelog_file.version.clone())]).await{
+                       match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![value!(changelog_file.version.clone())]).await{
                            Ok(result) => {
                                // println!("{:?}",result);
                               if result.first().is_some(){
@@ -297,7 +303,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                        let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'in_progress');"#,
                                                       self.migrations_table_name.as_str());
                        log::debug!("Insert statement: {}", insert_statement.as_str());
-                       let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])
+                       let _insert_result = db.exec(insert_statement.as_str(), vec![value!(ts),value!(changelog_file.version.clone()),value!(changelog_file.name.clone()),value!(changelog_file.checksum.clone())])
                            .await
                            .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
                        return Ok(());
@@ -324,7 +330,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
             //                                self.migrations_table_name.as_str());
            let insert_statement=insert_sql(self.driver_type().unwrap(),self.migrations_table_name.clone(),"in_progress".to_string());
             log::debug!("Insert statement: {}", insert_statement.as_str());
-            let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])
+            let _insert_result = db.exec(insert_statement.as_str(), vec![value!(ts),value!(changelog_file.version.clone()),value!(changelog_file.name.clone()),value!(changelog_file.checksum.clone())])
                 .await
                 .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
         }
@@ -346,7 +352,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                     RbatisDbDriverType::TDengine => {
                         let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version as i64;
                         let ts_select=format!(r#"select ts,version from {} where status='in_progress' and version=? limit 1;"#, self.migrations_table_name.as_str());
-                        match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![to_value!(changelog_file.version.clone())]).await{
+                        match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![value!(changelog_file.version.clone())]).await{
                             Ok(result) => {
                                 if result.first().is_some(){
                                     let  time=result.first().unwrap().ts.clone().set_offset(-16*60*60);
@@ -360,7 +366,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                         let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'deployed');"#,
                                                        self.migrations_table_name.as_str());
                         log::debug!("Insert statement: {}", insert_statement.as_str());
-                        let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])
+                        let _insert_result = db.exec(insert_statement.as_str(), vec![value!(ts),value!(changelog_file.version.clone()),value!(changelog_file.name.clone()),value!(changelog_file.checksum.clone())])
                             .await
                             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
                         return Ok(());
@@ -389,7 +395,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
             let insert_statement=insert_sql(self.driver_type().unwrap(),self.migrations_table_name.clone(),"in_progress".to_string());
 
             log::debug!("Insert statement: {}", insert_statement.as_str());
-            let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])
+            let _insert_result = db.exec(insert_statement.as_str(), vec![value!(ts),value!(changelog_file.version.clone()),value!(changelog_file.name.clone()),value!(changelog_file.checksum.clone())])
                 .await
                 .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
         }
@@ -411,7 +417,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                     RbatisDbDriverType::TDengine => {
                         let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version as i64;
                         let ts_select=format!(r#"select ts,version from {} where status='in_progress' and version=? limit 1;"#, self.migrations_table_name.as_str());
-                        match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![to_value!(changelog_file.version.clone())]).await{
+                        match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![value!(changelog_file.version.clone())]).await{
                             Ok(result) => {
                                 if result.first().is_some(){
                                     let  time=result.first().unwrap().ts.clone().set_offset(-16*60*60);
@@ -425,7 +431,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                         let insert_statement = format!(r#"INSERT INTO {}(ts,version,name,checksum, status) VALUES (?,?,?,?, 'fail');"#,
                                                        self.migrations_table_name.as_str());
                         log::debug!("Insert statement: {}", insert_statement.as_str());
-                        let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])
+                        let _insert_result = db.exec(insert_statement.as_str(), vec![value!(ts),value!(changelog_file.version.clone()),value!(changelog_file.name.clone()),value!(changelog_file.checksum.clone())])
                             .await
                             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
                         return Ok(());
@@ -454,7 +460,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
             let insert_statement=insert_sql(self.driver_type().unwrap(),self.migrations_table_name.clone(),"in_progress".to_string());
 
             log::debug!("Insert statement: {}", insert_statement.as_str());
-            let _insert_result = db.exec(insert_statement.as_str(), vec![to_value!(ts),to_value!(changelog_file.version.clone()),to_value!(changelog_file.name.clone()),to_value!(changelog_file.checksum.clone())])
+            let _insert_result = db.exec(insert_statement.as_str(), vec![value!(ts),value!(changelog_file.version.clone()),value!(changelog_file.name.clone()),value!(changelog_file.checksum.clone())])
                 .await
                 .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
         }

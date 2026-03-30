@@ -4,7 +4,6 @@ extern crate rbatis;
 use std::sync::Arc;
 use rbatis::RBatis;
 use rbdc_tdengine::driver::TaosDriver;
-use rbdc_tdengine::options::TaosConnectOptions;
 use flyway::{MigrationRunner, MigrationsError};
 use flyway::migrations;
 use flyway_rbatis::*;
@@ -34,12 +33,9 @@ pub async fn main() {
     // rb.init(rbdc_mysql::driver::MysqlDriver {}, "mysql://root:123456@localhost:3306/test").unwrap();
     // rb.init(rbdc_pg::driver::PgDriver {}, "postgres://postgres:123456@localhost:5432/postgres").unwrap();
     // rb.init(rbdc_mssql::driver::MssqlDriver {}, "mssql://SA:TestPass!123456@localhost:1433/test").unwrap();
-    rb.init_opt(
+    rb.init(
         TaosDriver {},
-        TaosConnectOptions{
-            dsn: "taos+ws://localhost:6041/test".to_string()
-        }
-
+        "taos+ws://localhost:6041/test"
     )
         .unwrap();
 

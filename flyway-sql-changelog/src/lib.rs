@@ -583,7 +583,7 @@ mod test {
         let result = ChangelogFile::from_path(&path);
         match result {
             Ok(changelog) => {
-                assert_eq!(changelog.version, "V1");
+                assert_eq!(changelog.version, 1);
                 assert!(changelog.content().trim_start().starts_with("CREATE TABLE lorem"));
                 assert!(changelog.content().trim_end().ends_with("ipsum VARCHAR(16));"));
             }
@@ -599,7 +599,7 @@ mod test {
         let result = ChangelogFile::from_path(&path);
         match result {
             Ok(changelog) => {
-                assert_eq!(changelog.version, "V2");
+                assert_eq!(changelog.version, 2);
                 assert!(changelog.content().trim_start().starts_with("CREATE INDEX idx_lorem_ipsum"));
                 assert!(changelog.content().trim_end().ends_with("sit INTEGER, ahmed BIGINT);"));
             }

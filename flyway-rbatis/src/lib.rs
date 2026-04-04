@@ -501,9 +501,20 @@ impl MigrationExecutor for RbatisMigrationDriver {
             Some(tx) => {
                 for statement in changelog_file.iter() {
                     log::debug!("Executing statement: {}", statement.statement.as_str());
-                    tx.exec(statement.statement.as_str(), vec![])
-                        .await
-                        .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
+                    let may_fail = statement.annotation.as_ref()
+                        .map(|a| a.may_fail())
+                        .unwrap_or(false);
+                    let result = tx.exec(statement.statement.as_str(), vec![]).await;
+                    match result {
+                        Ok(_) => {},
+                        Err(err) => {
+                            if may_fail {
+                                log::warn!("Statement failed but may_fail is set, continuing: {}", err);
+                            } else {
+                                return Err(MigrationsError::migration_database_step_failed(None, Some(err.into())));
+                            }
+                        }
+                    }
                 }
             },
             None => {

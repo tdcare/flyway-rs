@@ -162,6 +162,13 @@ pub struct SqlStatementAnnotation {
     may_fail: Option<bool>,
 }
 
+impl SqlStatementAnnotation {
+    /// Returns `true` if the annotated statement is allowed to fail without aborting the migration.
+    pub fn may_fail(&self) -> bool {
+        self.may_fail.unwrap_or(false)
+    }
+}
+
 /// A single, optionally annotated, SQL statement
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SqlStatement {

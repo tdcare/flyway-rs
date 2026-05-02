@@ -220,7 +220,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
         let mut db = db.acquire()
             .await
             .or_else(|err| Err(MigrationsError::migration_database_failed(None, Some(err.into()))))?;
-        let version: Option<u64> = db.query_decode(format!("SELECT MIN(version) FROM {} WHERE status='deployed';",
+        let version: Option<u64> = db.rb.query_decode(format!("SELECT MIN(version) FROM {} WHERE status='deployed';",
                                                            self.migrations_table_name.as_str()).as_str(), vec![])
             .await
             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
@@ -239,7 +239,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
         let mut db = db.acquire()
             .await
             .or_else(|err| Err(MigrationsError::migration_database_failed(None, Some(err.into()))))?;
-        let version: Option<u64> = db.query_decode(format!("SELECT MAX(version) FROM {} WHERE status='deployed';",
+        let version: Option<u64> = db.rb.query_decode(format!("SELECT MAX(version) FROM {} WHERE status='deployed';",
                                                            self.migrations_table_name.as_str()).as_str(), vec![])
             .await
             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
@@ -258,7 +258,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
         let mut db = db.acquire()
             .await
             .or_else(|err| Err(MigrationsError::migration_database_failed(None, Some(err.into()))))?;
-        let versions: Vec<u64> = db.query_decode(format!("SELECT version FROM {} WHERE status='deployed' ORDER BY version asc;",
+        let versions: Vec<u64> = db.rb.query_decode(format!("SELECT version FROM {} WHERE status='deployed' ORDER BY version asc;",
                                                          self.migrations_table_name.as_str()).as_str(), vec![])
             .await
             .or_else(|err| Err(MigrationsError::migration_versioning_failed(Some(err.into()))))?;
@@ -288,7 +288,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                    RbatisDbDriverType::TDengine => {
                        let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version() as i64;
                        let ts_select=format!(r#"select ts,version from {} where status='in_progress' and version=? limit 1;"#, self.migrations_table_name.as_str());
-                       match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![value!(changelog_file.version.clone())]).await{
+                       match   db.rb.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![value!(changelog_file.version.clone())]).await{
                            Ok(result) => {
                                // println!("{:?}",result);
                               if result.first().is_some(){
@@ -352,7 +352,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                     RbatisDbDriverType::TDengine => {
                         let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version as i64;
                         let ts_select=format!(r#"select ts,version from {} where status='in_progress' and version=? limit 1;"#, self.migrations_table_name.as_str());
-                        match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![value!(changelog_file.version.clone())]).await{
+                        match   db.rb.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![value!(changelog_file.version.clone())]).await{
                             Ok(result) => {
                                 if result.first().is_some(){
                                     let  time=result.first().unwrap().ts.clone().set_offset(-16*60*60);
@@ -417,7 +417,7 @@ impl MigrationStateManager for RbatisMigrationDriver {
                     RbatisDbDriverType::TDengine => {
                         let mut ts:i64=DateTime::utc().unix_timestamp_millis()+changelog_file.version as i64;
                         let ts_select=format!(r#"select ts,version from {} where status='in_progress' and version=? limit 1;"#, self.migrations_table_name.as_str());
-                        match   db.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![value!(changelog_file.version.clone())]).await{
+                        match   db.rb.query_decode::<Vec<MigrationInfo>>(ts_select.as_str(),vec![value!(changelog_file.version.clone())]).await{
                             Ok(result) => {
                                 if result.first().is_some(){
                                     let  time=result.first().unwrap().ts.clone().set_offset(-16*60*60);

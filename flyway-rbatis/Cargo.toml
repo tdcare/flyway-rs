@@ -16,9 +16,9 @@ flyway={workspace = true}
 log = "0.4.17"
 serde = { version = "1", features = ["derive"] }
 
-rbatis = {version="4.8",features = ["debug_mode"]} #必选
-rbs={version="4.7"}
-rbdc={version="4.7"}
+rbatis = {version="4.9",features = ["debug_mode"]} #必选
+rbs={version="4.8"}
+rbdc={version="4.9"}
 
 async-trait={version = "0.1.64"}
 

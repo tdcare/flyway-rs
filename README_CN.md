@@ -35,10 +35,10 @@
 
 ```toml
 [dependencies]
-flyway = "0.5.0"
-flyway-rbatis = "0.5.0"
-rbatis = "4.8"
-rbdc-mysql = "4.8"    # 或 rbdc-pg、rbdc-tdengine 等
+flyway = "0.6.0"
+flyway-rbatis = "0.6.0"
+rbatis = "4.9"
+rbdc-mysql = "4.9"    # 或 rbdc-pg 等
 tokio = { version = "1", features = ["full"] }
 ```
 

@@ -6,6 +6,9 @@ use async_trait::async_trait;
 pub use flyway_codegen::{ migrations };
 pub use flyway_sql_changelog::{Result as ChangelogResult, *};
 
+mod runtime_store;
+pub use runtime_store::RuntimeMigrationStore;
+
 /// Kinds of errors produced by the migration code
 #[derive(Debug)]
 pub enum MigrationsErrorKind {
@@ -237,6 +240,13 @@ pub trait MigrationExecutor {
     async fn execute_changelog_file(&self, changelog_file: &ChangelogFile) -> Result<()>;
     async fn commit_transaction(&self) -> Result<()>;
     async fn rollback_transaction(&self) -> Result<()>;
+}
+
+// Implement MigrationStore for Box<dyn MigrationStore> to support trait objects
+impl MigrationStore for Box<dyn MigrationStore> {
+    fn changelogs(&self) -> Vec<ChangelogFile> {
+        self.as_ref().changelogs()
+    }
 }
 
 /// Struct for running migrations on a database

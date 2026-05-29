@@ -15,6 +15,7 @@ fast_log = "1.5"
 
 flyway= {workspace = true}
 flyway-rbatis= {workspace = true}
+flyway-codegen= {workspace = true}
 
 rbatis = {version="4.9",features = ["debug_mode"]} #必选
 rbdc-mysql = "4.9"
@@ -30,4 +31,10 @@ path = "src/taos.rs"
 [[bin]]
 name = "multi-db"
 path = "src/multi_db.rs"
+[[bin]]
+name = "runtime_mysql"
+path = "src/runtime_mysql.rs"
+[[bin]]
+name = "hybrid_mode"
+path = "src/hybrid_mode.rs"
 

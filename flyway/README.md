@@ -13,6 +13,7 @@ It was created as an alternative to [refinery](https://github.com/rust-db/refine
 
 - **Multi-database support**: MySQL, PostgreSQL, SQLite, MSSql, TDengine
 - **Compile-time migration embedding**: SQL files are parsed and embedded into the binary at compile time via procedural macros — no runtime file I/O needed
+- **Runtime migration loading**: Dynamically load SQL migration scripts from filesystem at runtime using `RuntimeMigrationStore` — perfect for development and flexible deployment scenarios
 - **Version-based migration management**: Automatic tracking of applied migrations with version state management
 - **Transaction support**: Each migration runs within its own database transaction, with automatic rollback on failure
 - **Fail-continue mode**: Optionally continue executing subsequent migrations when a single migration fails
@@ -144,6 +145,53 @@ When `may_fail: true` is set, the migration will continue even if that specific 
 cd flyway
 cargo test
 ```
+
+## Runtime Migration Loading
+
+In addition to compile-time embedding, `flyway` also supports dynamically loading SQL migration scripts from the filesystem at runtime.
+
+### Basic Usage
+
+```rust
+use flyway::{MigrationRunner, RuntimeMigrationStore};
+use std::sync::Arc;
+
+// Create a runtime migration store
+let store = RuntimeMigrationStore::new("migrations/mysql");
+
+// Optional: validate that the directory exists
+if let Err(e) = store.validate() {
+    eprintln!("Warning: {}", e);
+}
+
+// Use with MigrationRunner
+let driver = Arc::new(RbatisMigrationDriver::new(rbatis, None));
+let runner = MigrationRunner::new(
+    store,
+    driver.clone(),
+    driver.clone(),
+    true, // fail_continue
+);
+
+runner.migrate().await?;
+```
+
+### File Naming Convention
+
+Runtime loading follows the same naming rules as compile-time embedding:
+- Filenames must start with `V`
+- Followed by a pure numeric version number
+- Version number must be followed by an underscore `_` separator
+- Then a descriptive name
+- Must end with `.sql`
+
+Examples: `V1_Create_Table.sql`, `V2_Add_Column.sql`
+
+### Error Handling
+
+- If the directory does not exist, returns an empty list and logs a warning
+- If a file format is invalid, skips that file and logs a warning
+- All errors do not interrupt program execution
 
 ## Examples
 

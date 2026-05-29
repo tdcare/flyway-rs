@@ -13,6 +13,7 @@
 
 - **多数据库支持**：MySQL、PostgreSQL、SQLite、MSSql、TDengine
 - **编译期迁移嵌入**：通过过程宏在编译期解析 SQL 文件并嵌入二进制文件，运行时无需文件 I/O
+- **运行时迁移加载**：使用 `RuntimeMigrationStore` 在运行时从文件系统动态加载 SQL 迁移脚本 — 非常适合开发和灵活部署场景
 - **版本化迁移管理**：自动跟踪已应用的迁移版本，支持版本状态管理
 - **事务支持**：每个迁移在独立的数据库事务中执行，失败时自动回滚
 - **失败继续模式**：可选配置，当单个迁移失败时继续执行后续迁移
@@ -123,6 +124,63 @@ pub struct TaosMigrations {}
 
 然后使用 `RbatisMigrationDriver::driver_type()` 在运行时检测数据库类型，选择对应的迁移存储执行。完整实现请参考 [multi_db 示例](example/src/multi_db.rs)。
 
+## 编译期嵌入 vs 运行时加载
+
+flyway-rs 支持两种迁移脚本加载方式，可根据场景灵活选择：
+
+### 编译期嵌入（`#[migrations]` 宏）
+
+```rust
+#[migrations("migrations/mysql/")]
+pub struct Migrations {}
+```
+
+**优势**：
+- ⚡ 启动更快（无文件系统 I/O）
+- 🔒 安全性更高（SQL 不可篡改）
+- 📦 单文件部署，简化运维
+- ✅ 编译期验证文件格式
+
+**适用场景**：
+- 生产环境部署
+- 嵌入式设备或容器化应用
+- 迁移脚本随代码版本控制
+- 对启动性能要求高的场景
+
+### 运行时加载（`RuntimeMigrationStore`）
+
+```rust
+let store = RuntimeMigrationStore::new("migrations/mysql");
+```
+
+**优势**：
+- 🔄 无需重新编译即可更新迁移
+- 🎯 可根据环境动态选择迁移目录
+- 🔧 便于外部系统管理迁移脚本
+- 💡 开发调试更灵活
+
+**适用场景**：
+- 开发环境快速迭代
+- 微服务架构中集中管理迁移
+- 需要 A/B 测试不同迁移策略
+- 迁移脚本由外部系统生成
+
+### 混合模式
+
+可以根据环境变量自动切换模式：
+
+```rust
+fn create_store() -> Box<dyn MigrationStore> {
+    if std::env::var("USE_RUNTIME").unwrap_or_default() == "true" {
+        Box::new(RuntimeMigrationStore::new("migrations/"))
+    } else {
+        Box::new(CompileTimeMigrations {})
+    }
+}
+```
+
+完整示例请参考 [`example/src/hybrid_mode.rs`](example/src/hybrid_mode.rs)。
+
 ## SQL 注解
 
 可以使用特殊注释对 SQL 语句进行注解，以控制错误处理行为：
@@ -152,6 +210,19 @@ cargo test
 - [`mysql.rs`](example/src/mysql.rs) — MySQL 迁移示例
 - [`taos.rs`](example/src/taos.rs) — TDengine 迁移示例
 - [`multi_db.rs`](example/src/multi_db.rs) — 多数据库运行时派发示例
+- [`runtime_mysql.rs`](example/src/runtime_mysql.rs) — 运行时加载示例
+- [`hybrid_mode.rs`](example/src/hybrid_mode.rs) — 混合模式示例（根据环境变量自动选择）
+
+### 运行时加载示例
+
+```bash
+# 运行时从目录加载迁移脚本
+cargo run --bin runtime_mysql
+
+# 混合模式：根据环境变量自动选择
+cargo run --bin hybrid_mode
+USE_RUNTIME_MIGRATIONS=true cargo run --bin hybrid_mode
+```
 
 ## 许可证
 

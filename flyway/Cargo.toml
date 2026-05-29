@@ -22,3 +22,6 @@ flyway-sql-changelog= {workspace = true}
 
 async-trait={version = "0.1.64"}
 
+[dev-dependencies]
+tempfile = "3"
+

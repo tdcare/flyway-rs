@@ -197,10 +197,25 @@ impl ChangelogFile {
         let basename_opt = path.components().last();
         if let Some(basename) = basename_opt {
             let basename = basename.as_os_str().to_str().unwrap();
-            let index_opt = basename.find("_");
-            if let Some(index) = index_opt {
-                if index > 0 {
-                    version = (&basename[0..index]).to_string().parse().unwrap_or_default();
+            
+            // Expected format: V<version>_<name>.sql
+            // First, check if it starts with 'V'
+            if basename.starts_with('V') {
+                let index_opt = basename.find("_");
+                if let Some(index) = index_opt {
+                    if index > 1 {  // Must have at least 'V' + one digit before underscore
+                        // Extract version (skip the 'V' prefix)
+                        let version_str = &basename[1..index];
+                        version = version_str.parse().unwrap_or_default();
+                        
+                        // Extract name: everything between underscore and .sql extension
+                        let remaining = &basename[index + 1..];
+                        if let Some(dot_pos) = remaining.rfind('.') {
+                            name = remaining[..dot_pos].to_string();
+                        } else {
+                            name = remaining.to_string();
+                        }
+                    }
                 }
             }
         }

@@ -404,12 +404,15 @@ impl Iterator for SqlStatementIterator {
                             if current_char == *q {
                                 statement.push(current_char);
                                 self.state = SqlStatementIteratorState::Normal;
+                            } else {
+                                statement.push(current_char);
                             }
                         },
                         SqlStatementIteratorState::Comment(prev_state, comment) => {
                             if comment.len() < 2 {
                                 let mut comment_clone = comment.clone();
                                 statement.append(&mut comment_clone);
+                                statement.push(current_char);
                                 self.state = *prev_state.clone();
                             } else {
                                 self.state = SqlStatementIteratorState::Comment(
@@ -424,7 +427,7 @@ impl Iterator for SqlStatementIterator {
                     match &self.state {
                         SqlStatementIteratorState::Normal => {
                             statement.push(current_char);
-                            self.state = SqlStatementIteratorState::Quoted(SINGLE_QUOTE1);
+                            self.state = SqlStatementIteratorState::Quoted(SINGLE_QUOTE2);
                         },
                         SqlStatementIteratorState::Escaped(q) => {
                             statement.push(current_char);
@@ -440,6 +443,7 @@ impl Iterator for SqlStatementIterator {
                             if comment.len() < 2 {
                                 let mut comment_clone = comment.clone();
                                 statement.append(&mut comment_clone);
+                                statement.push(current_char);
                                 self.state = *prev_state.clone();
                             } else {
                                 self.state = SqlStatementIteratorState::Comment(
@@ -454,7 +458,7 @@ impl Iterator for SqlStatementIterator {
                     match &self.state {
                         SqlStatementIteratorState::Normal => {
                             statement.push(current_char);
-                            self.state = SqlStatementIteratorState::Quoted(SINGLE_QUOTE1);
+                            self.state = SqlStatementIteratorState::Quoted(DOUBLE_QUOTE);
                         },
                         SqlStatementIteratorState::Escaped(q) => {
                             statement.push(current_char);
@@ -470,6 +474,7 @@ impl Iterator for SqlStatementIterator {
                             if comment.len() < 2 {
                                 let mut comment_clone = comment.clone();
                                 statement.append(&mut comment_clone);
+                                statement.push(current_char);
                                 self.state = *prev_state.clone();
                             } else {
                                 self.state = SqlStatementIteratorState::Comment(
@@ -489,6 +494,7 @@ impl Iterator for SqlStatementIterator {
                             if comment.len() < 2 {
                                 let mut comment_clone = comment.clone();
                                 statement.append(&mut comment_clone);
+                                statement.push(current_char);
                                 self.state = *prev_state.clone();
                             } else {
                                 self.state = SqlStatementIteratorState::Comment(
@@ -516,6 +522,7 @@ impl Iterator for SqlStatementIterator {
                             if comment.len() < 2 {
                                 let mut comment_clone = comment.clone();
                                 statement.append(&mut comment_clone);
+                                statement.push(current_char);
                                 self.state = *prev_state.clone();
                             } else {
                                 self.state = SqlStatementIteratorState::Comment(
@@ -535,6 +542,7 @@ impl Iterator for SqlStatementIterator {
                             if comment.len() < 2 {
                                 let mut comment_clone = comment.clone();
                                 statement.append(&mut comment_clone);
+                                statement.push(current_char);
                                 self.state = *prev_state.clone();
                             } else {
                                 self.state = SqlStatementIteratorState::Comment(
@@ -551,18 +559,16 @@ impl Iterator for SqlStatementIterator {
             }
         }
 
-        for byte in statement.as_slice() {
-            if *byte > 127 {
-                log::error!("invalid byte: {:#02x}", byte);
-            }
-        }
-
         // println!("FINISHED READING: statement={}", String::from_utf8(statement.clone()).unwrap());
         if statement.len() > 0 {
             //self.position += len;
             // println!("FINISHED READING: position={}", self.position);
             return String::from_utf8(statement)
                 .map(|value| value.trim().to_string())
+                .map_err(|err| {
+                    log::warn!("Failed to parse statement as UTF-8: {}", err);
+                    err
+                })
                 .ok()
                 .map_or_else(|| None, |value| {
                     if value.len() > 0 {
@@ -676,5 +682,42 @@ mod test {
                 assert!(false, "Changelog file loading failed: {}", err);
             }
         }
+    }
+
+    #[test]
+    pub fn test_changelog_file_utf8_chinese() {
+        // 中文注释、反引号中文标识符与中文字符串字面量均应按 UTF-8 正确解析
+        let sql = "-- 创建设备表\n\
+                   CREATE TABLE `设备表` (id SERIAL, name VARCHAR(64));\n\
+                   -- 插入测试数据\n\
+                   INSERT INTO `设备表` (name) VALUES ('测试设备');";
+        let changelog = ChangelogFile::from_string(100, "test_utf8_chinese", sql).unwrap();
+        let mut iterator = changelog.iter();
+        let statement1 = iterator.next();
+        assert!(statement1.is_some(), "Found first statement.");
+        assert_eq!(statement1.unwrap().statement.trim(),
+                   "CREATE TABLE `设备表` (id SERIAL, name VARCHAR(64))",
+                   "Correct first statement returned.");
+        let statement2 = iterator.next();
+        assert!(statement2.is_some(), "Found second statement.");
+        assert_eq!(statement2.unwrap().statement.trim(),
+                   "INSERT INTO `设备表` (name) VALUES ('测试设备')",
+                   "Correct second statement returned.");
+        let statement3 = iterator.next();
+        assert!(statement3.is_none(), "Exactly two statements found in iterator.");
+    }
+
+    #[test]
+    pub fn test_changelog_file_utf8_after_single_dash() {
+        // 单个 '-'（非注释）后直接跟中文字符时，不得丢失 UTF-8 首字节导致语句解析失败
+        let sql = "SELECT 1-中文值;";
+        let changelog = ChangelogFile::from_string(101, "test_utf8_dash", sql).unwrap();
+        let mut iterator = changelog.iter();
+        let statement1 = iterator.next();
+        assert!(statement1.is_some(), "Found first statement.");
+        assert_eq!(statement1.unwrap().statement.trim(),
+                   "SELECT 1-中文值",
+                   "Correct statement returned.");
+        assert!(iterator.next().is_none(), "Exactly one statement found in iterator.");
     }
 }

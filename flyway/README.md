@@ -36,8 +36,8 @@ It was created as an alternative to [refinery](https://github.com/rust-db/refine
 
 ```toml
 [dependencies]
-flyway = "0.7.0"
-flyway-rbatis = "0.7.0"
+flyway = "0.7.1"
+flyway-rbatis = "0.7.1"
 rbatis = "4.9"
 rbdc-mysql = "4.9"    # or rbdc-pg, etc.
 tokio = { version = "1", features = ["full"] }
